@@ -47,15 +47,22 @@ def get_fileset(with_failure=False, n_files_max_per_sample=2):
 
     if with_failure:
         # corrupt one URL on purpose: the chunk containing it fails, the other
-        # chunks succeed and are cached, and a rerun retries only the failed chunk
-        files = fileset["ttbar__nominal"]["files"]
+        # chunks succeed and are cached, and a rerun retries only the failed chunk.
+        # root:// + invalid host fails as a plain OSError ("[FATAL] Invalid address"),
+        # the same failure mode as the showcase toy — proven to be wrapped as Err and
+        # recovered on coffea-casa with both FuturesExecutor and DaskExecutor.
+        # (https-based failures proved backend-fragile: aiohttp DNS errors collapsed
+        # DaskExecutor, 404s terminated loky workers under FuturesExecutor.)
+        files = fileset["single_top_s_chan__nominal"]["files"]
         files[0] = files[0].replace(
             "https://xrootd-local.unl.edu:1094", "root://eeeeexrootd-local.unl.edu:1094"
         )
-
+        # bulletproof fallback if the above surprises at rehearsal: a local path that
+        # cannot exist — fails as FileNotFoundError without touching any network stack.
+        # files[0] = "/nonexistent/broken_demo_file.root"
     print(f"processes in fileset: {list(fileset.keys())}")
-    print(f"\nexample of information in fileset:\n{{\n  'files': [{fileset['ttbar__nominal']['files'][0]}, ...],")
-    print(f"  'metadata': {fileset['ttbar__nominal']['metadata']}\n}}")
+    print(f"\nexample of information in fileset:\n{fileset["single_top_s_chan__nominal"]['files'][:2]}")
+    print(f"  'metadata': {fileset['single_top_s_chan__nominal']['metadata']}\n}}")
     return fileset
 
 
