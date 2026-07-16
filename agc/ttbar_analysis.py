@@ -46,20 +46,13 @@ def get_fileset(with_failure=False, n_files_max_per_sample=2):
     )
 
     if with_failure:
-        # corrupt one URL on purpose: the chunk containing it fails, the other
-        # chunks succeed and are cached, and a rerun retries only the failed chunk.
-        # root:// + invalid host fails as a plain OSError ("[FATAL] Invalid address"),
-        # the same failure mode as the showcase toy — proven to be wrapped as Err and
-        # recovered on coffea-casa with both FuturesExecutor and DaskExecutor.
-        # (https-based failures proved backend-fragile: aiohttp DNS errors collapsed
-        # DaskExecutor, 404s terminated loky workers under FuturesExecutor.)
+        # corrupt one URL on purpose: run_analysis detects the broken host and fails
+        # that chunk in-band (returns Err), so the other chunks succeed and are
+        # cached, and a rerun retries only the failed chunk.
         files = fileset["single_top_s_chan__nominal"]["files"]
         files[0] = files[0].replace(
             "https://xrootd-local.unl.edu:1094", "root://eeeeexrootd-local.unl.edu:1094"
         )
-        # bulletproof fallback if the above surprises at rehearsal: a local path that
-        # cannot exist — fails as FileNotFoundError without touching any network stack.
-        # files[0] = "/nonexistent/broken_demo_file.root"
     print(f"processes in fileset: {list(fileset.keys())}")
     print(f"\nexample of information in fileset:\n{fileset["single_top_s_chan__nominal"]['files'][:2]}")
     print(f"  'metadata': {fileset['single_top_s_chan__nominal']['metadata']}\n}}")
@@ -321,6 +314,21 @@ class TtbarAnalysis(processor.ProcessorABC):
 def run_analysis(fileset, executor=None, use_inference=False, use_triton=False):
     # use_inference: enable ML inference (needs xgboost installed and the models/ directory)
     # use_triton: run inference against an NVIDIA Triton server instead of local models
+
+    # deliberately poisoned chunk (see get_fileset with_failure): fail in-band.
+    # Returning Err directly keeps the failure deterministic on every executor —
+    # real network failures surfacing through dask/loky preprocessing proved
+    # backend-fragile (see the error-handling issue in coffea-workflow).
+    # NOTE: the marker lives in the chunk's DATA — builder_params reach every
+    # chunk, so a step-level flag would poison the whole run.
+    # Local import: keeps this module importable on workers whose coffea
+    # build predates the Ok/Err result types (parallel_chunks imports it there).
+    from coffea.processor.executor import Err
+
+    broken = [f for ds in fileset.values() for f in ds.get("files", []) if "eeeee" in f]
+    if broken:
+        return Err(OSError(f"[demo] unreachable replica: {broken[0]}"))
+
     NanoAODSchema.warn_missing_crossrefs = False # silences warnings about branches we will not use here
 
     # serialize utils by value so Dask workers can run the processor without
