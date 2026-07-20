@@ -4,9 +4,11 @@
 
 The worker environment comes **entirely from the image** — there is no runtime package installation. The AGC processor needs `correctionlib` and `vector` on top of the defaults (add `xgboost` if you enable `use_inference`). `corrections.json` itself is *not* needed on the workers: the processor is built on the driver and shipped with the corrections embedded.
 
+This folder is **self-contained**: `ttbar_analysis.py`, `utils/`, `models/`, and the input JSONs are copied in here so the whole thing can be scp'd or cloned to lxplus on its own, without needing the rest of the repo.
+
 ## Step 1 — generate the deployment files (off lxplus)
 
-From this directory (`agc/`):
+From this directory (`agc/lxplus/`):
 
 ```bash
 python workflow_lxplus.py
@@ -33,16 +35,16 @@ cp worker.sif ~/worker.sif          # keep a copy in AFS
 
 ## Step 3 — run
 
-Clone this repo on lxplus (the driver needs `ttbar_analysis.py`, `utils/`, and the input JSONs), put the image next to the script, and run from `agc/`:
+Clone this repo on lxplus, put the image next to the script, and run from `agc/lxplus/` (everything the driver needs — `ttbar_analysis.py`, `utils/`, the input JSONs — is already in this folder):
 
 ```bash
-git clone <this-repo> && cd coffea-workflow-demo/agc
+git clone <this-repo> && cd coffea-workflow-demo/agc/lxplus
 cp ~/worker.sif .
 tmux new -s agc          # keep the driver alive if your SSH session drops
 bash run_on_lxplus.sh
 ```
 
-> **The driver's lifetime is the cluster's lifetime**: if the script's process dies (dropped SSH, closed laptop), its queued/running HTCondor jobs are removed with it. Run inside `tmux`/`screen` for anything longer than a quick test. Worker logs land in `condor_logs/`.
+> **The driver's lifetime is the cluster's lifetime**: if the script's process dies (dropped SSH, closed laptop), its queued/running HTCondor jobs are removed with it. Run inside `tmux`/`screen` for anything longer than a quick test.
 
 `run_on_lxplus.sh` creates the VOMS proxy, binds the HTCondor and Kerberos configuration into the container, and re-runs `workflow_lxplus.py` inside `worker.sif`. The proxy is forwarded to the workers for remote file access. The final plot is written to `ttbar_4j1b.png`.
 
