@@ -5,14 +5,9 @@ then generates worker.def and run_on_lxplus.sh with the exact build and deploy
 commands. See README.md in this folder for the full three-step walkthrough.
 """
 
-import sys
-from pathlib import Path
-
 import matplotlib
 
 matplotlib.use("Agg")  # lxplus is headless
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import matplotlib.pyplot as plt
 
