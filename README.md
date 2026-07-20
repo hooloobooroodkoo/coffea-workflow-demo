@@ -74,9 +74,9 @@ This block is identical across every example below — the only thing that chang
 | [`workflow_local.ipynb`](agc/workflow_local.ipynb) | `FuturesExecutor`, dataset restriction for quick checks, a broken replica costing one subset — partial result + selective retry | anywhere |
 | [`workflow_coffea_casa.ipynb`](agc/workflow_coffea_casa.ipynb) | `DaskExecutor` on casa's cluster, worker provisioning (packages + files), same fault tolerance | coffea-casa JupyterLab |
 | [`parallel_vs_sequential.ipynb`](agc/parallel_vs_sequential.ipynb) | sequential vs parallel dispatch, timed, subset sizes printed, identical-results check | coffea-casa JupyterLab |
-| [`workflow_lxplus.py`](agc/workflow_lxplus.py) | HTCondor workers in an Apptainer image — walkthrough in [`README_lxplus.md`](agc/README_lxplus.md) | CERN lxplus |
+| [`lxplus/workflow_lxplus.py`](agc/lxplus/workflow_lxplus.py) | HTCondor workers in an Apptainer image — walkthrough in [`lxplus/README.md`](agc/lxplus/README.md) | CERN lxplus |
 
-Shared by all examples: `ttbar_analysis.py` (fileset / processor / plotting), `utils/`, `nanoaod_inputs.json`, `corrections.json`, `models/`.
+Shared by all examples: `ttbar_analysis.py` (fileset / processor / plotting), `utils/`, `nanoaod_inputs.json`, `corrections.json`, `models/`. (`agc/lxplus/` keeps its own copy of these — it's meant to be deployed as a self-contained folder, so it doesn't reach back into `agc/`.)
 
 ## Toy examples — [`showcase/`](showcase/)
 
